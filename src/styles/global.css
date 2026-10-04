@@ -1,0 +1,185 @@
+/* ---------------------------------------------------------------
+   ESTILOS GLOBALES
+   Casi todo el diseño está hecho con clases de Tailwind directo en
+   el HTML. Aquí solo dejamos lo que Tailwind no trae: las fuentes,
+   nuestra paleta de colores y unos cuantos estilos repetidos.
+   --------------------------------------------------------------- */
+@import 'tailwindcss';
+
+/* Fuentes instaladas con npm */
+@import '@fontsource-variable/big-shoulders-display';
+@import '@fontsource-variable/figtree';
+@import '@fontsource-variable/jetbrains-mono';
+
+/* Aquí definimos nuestros colores y fuentes para usarlos como clases:
+   por ejemplo bg-papel, text-tinta, fill-j1, font-display...
+   Le pusimos "static" para que también existan como variables CSS
+   (var(--color-j1)) y poder usarlas desde JavaScript. */
+@theme static {
+  --font-display: 'Big Shoulders Display Variable', 'Impact', 'Arial Narrow', sans-serif;
+  --font-sans: 'Figtree Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Consolas', monospace;
+
+  --color-papel: #f3eee3;
+  --color-hoja: #fffaf0;
+  --color-tinta: #17140f;
+
+  --color-j1: #ff4b33; /* Jugador 1: rojo coral */
+  --color-j2: #6a3df0; /* Jugador 2: violeta */
+  --color-oro: #ffc533; /* ruta óptima y línea donde se elige */
+
+  --color-pasto: #2f8f4e;
+  --color-pasto-oscuro: #1f6b3a;
+  --color-arena: #f3dba0;
+  --color-mar: #1787b4;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Fondo tipo papel con puntitos, para que no se vea plano */
+body {
+  background-color: var(--color-papel);
+  background-image: radial-gradient(circle, rgb(23 20 15 / 0.09) 1px, transparent 1.3px);
+  background-size: 22px 22px;
+}
+
+/* Los elementos con data-entrada aparecen animados con GSAP al cargar.
+   Los escondemos desde el CSS (solo si hay JavaScript) para que no se
+   vea un "parpadeo" antes de que empiece la animación. */
+.js [data-entrada] {
+  opacity: 0;
+}
+
+/* Estilo de "cartel deportivo": borde grueso y sombra dura */
+@utility cartel {
+  border: 3px solid var(--color-tinta);
+  border-radius: 1rem;
+  box-shadow: 7px 7px 0 var(--color-tinta);
+}
+
+@utility cartel-chico {
+  border: 2px solid var(--color-tinta);
+  border-radius: 0.75rem;
+  box-shadow: 4px 4px 0 var(--color-tinta);
+}
+
+/* Botones */
+@utility boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--color-tinta);
+  border-radius: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease-out,
+    box-shadow 0.12s ease-out,
+    background-color 0.15s;
+
+  &:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+  }
+  &:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 transparent;
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+  &:focus-visible {
+    outline: 3px solid var(--color-oro);
+    outline-offset: 2px;
+  }
+}
+
+/* Los controles deslizantes toman el color del jugador en turno (--acento) */
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--acento, var(--color-tinta));
+  cursor: pointer;
+}
+input[type='range']:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+input[type='range']:focus-visible {
+  outline: 3px solid var(--color-oro);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* ---------- Tablero (el SVG donde se juega) ---------- */
+
+[data-tablero] {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* dejamos pasar el scroll vertical en el cel, pero el arrastre horizontal es nuestro */
+  touch-action: pan-y;
+  user-select: none;
+}
+
+/* Mientras se está escogiendo punto, el cursor avisa que se puede arrastrar */
+[data-fase='elige1'] [data-tablero],
+[data-fase='elige2'] [data-tablero] {
+  cursor: ew-resize;
+}
+
+/* Los textos dentro del SVG no deben estorbar al dar clic */
+[data-tablero] text {
+  pointer-events: none;
+}
+
+/* La línea donde se escoge el punto tiene rayitas que "caminan"
+   solo durante el turno de elegir */
+.linea-guia {
+  stroke-dasharray: 1.6 1.6;
+  opacity: 0;
+}
+[data-fase='elige1'] .linea-guia,
+[data-fase='elige2'] .linea-guia {
+  opacity: 1;
+  animation: caminar 1.1s linear infinite;
+}
+@keyframes caminar {
+  to {
+    stroke-dashoffset: -3.2;
+  }
+}
+
+/* Tarjeta del jugador que está en turno (o que ganó) */
+[data-tarjeta] {
+  transition:
+    box-shadow 0.25s ease-out,
+    transform 0.25s ease-out,
+    opacity 0.25s;
+}
+[data-tarjeta][data-activa='true'] {
+  box-shadow: 5px 5px 0 var(--color-jugador);
+  transform: translate(-1px, -1px);
+}
+[data-tarjeta][data-apagada='true'] {
+  opacity: 0.6;
+}
+
+/* Si la persona pidió menos movimiento en su sistema, quitamos lo decorativo */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .linea-guia {
+    animation: none !important;
+  }
+}

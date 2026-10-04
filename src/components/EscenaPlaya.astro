@@ -1,0 +1,187 @@
+---
+// Dibujo de la playa y el mar vistos desde arriba (va dentro de un <svg>).
+// Arriba está la arena y abajo el mar, la orilla es la línea y = 30.
+// Con "simple" se quitan la regla y los letreros para usarla de miniatura.
+import { PLAYA as e } from '../scripts/escenarios.js';
+
+const { simple = false } = Astro.props;
+const orilla = e.lineaY;
+
+// Aquí armamos el dibujo de una ola con curvas: sube y baja cada media
+// "longitud". La hacemos más larga que el tablero para poder recorrerla
+// con GSAP sin que se le vea el final.
+function ola(y: number, amplitud: number, longitud: number) {
+  let d = `M${-longitud} ${y}`;
+  const mitades = Math.ceil((e.ancho + longitud * 3) / (longitud / 2));
+  for (let i = 0; i < mitades; i++) {
+    const direccion = i % 2 === 0 ? -1 : 1;
+    d += `q${longitud / 4} ${direccion * amplitud} ${longitud / 2} 0`;
+  }
+  return d;
+}
+
+const olas = [
+  { y: 36, amplitud: 0.5, longitud: 12, duracion: 7, opacidad: 0.3 },
+  { y: 41.5, amplitud: 0.6, longitud: 16, duracion: 10, opacidad: 0.22 },
+  { y: 46.5, amplitud: 0.5, longitud: 10, duracion: 6, opacidad: 0.2 },
+  { y: 52, amplitud: 0.7, longitud: 18, duracion: 11, opacidad: 0.16 },
+  { y: 57, amplitud: 0.5, longitud: 14, duracion: 8, opacidad: 0.14 },
+];
+
+// Sombrillas vistas desde arriba: un círculo partido en 8 gajos de dos colores
+function gajo(radio: number, i: number) {
+  const a0 = (i * Math.PI) / 4;
+  const a1 = ((i + 1) * Math.PI) / 4;
+  const p = (a: number) => `${(radio * Math.cos(a)).toFixed(2)} ${(radio * Math.sin(a)).toFixed(2)}`;
+  return `M0 0L${p(a0)}A${radio} ${radio} 0 0 1 ${p(a1)}Z`;
+}
+const sombrillas = [
+  { x: 37, y: 8.5, radio: 3.3, color: '#ff7a59', toalla: '#38b6a3' },
+  { x: 63, y: 17, radio: 2.9, color: '#2a9d8f', toalla: '#ff9f6e' },
+  { x: 91, y: 8, radio: 3.1, color: '#e9a23b', toalla: '#5b8def' },
+];
+
+// Regla sobre la orilla: una rayita cada 5 m y número cada 10 m
+const rayitas = Array.from({ length: 21 }, (_, i) => i * 5);
+const numeros = rayitas.filter((x) => x % 10 === 0 && x > 0 && x < 100);
+---
+
+<g>
+  <defs>
+    <linearGradient id="degradado-arena" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8e6b6"></stop>
+      <stop offset="1" stop-color="#edcd8a"></stop>
+    </linearGradient>
+    <linearGradient id="degradado-mar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#55c8d2"></stop>
+      <stop offset="0.22" stop-color="#229fc4"></stop>
+      <stop offset="1" stop-color="#0b5a8c"></stop>
+    </linearGradient>
+    <!-- Puntitos para que la arena tenga textura -->
+    <pattern id="granitos" width="3" height="3" patternUnits="userSpaceOnUse">
+      <circle cx="0.6" cy="0.7" r="0.16" fill="#c9a45c" opacity="0.55"></circle>
+      <circle cx="2.1" cy="2.2" r="0.12" fill="#c9a45c" opacity="0.4"></circle>
+    </pattern>
+  </defs>
+
+  <!-- Arena -->
+  <rect x="0" y="0" width={e.ancho} height={orilla} fill="url(#degradado-arena)"></rect>
+  <rect x="0" y="0" width={e.ancho} height={orilla} fill="url(#granitos)"></rect>
+  <!-- arena mojada cerca de la orilla -->
+  <rect x="0" y={orilla - 2.6} width={e.ancho} height="2.6" fill="#c9a866" opacity="0.4"></rect>
+
+  <!-- Sombrillas y toallas (puro adorno) -->
+  {
+    sombrillas.map((s) => (
+      <g transform={`translate(${s.x} ${s.y})`}>
+        <rect x={s.radio * 0.9} y="-1" width="5" height="2.6" rx="0.4" fill={s.toalla} opacity="0.85" transform="rotate(12)" />
+        <circle cx="0.6" cy="0.8" r={s.radio} class="fill-tinta" opacity="0.18" />
+        <circle r={s.radio} fill="white" />
+        {[0, 2, 4, 6].map((i) => (
+          <path d={gajo(s.radio, i)} fill={s.color} />
+        ))}
+        <circle r="0.35" class="fill-tinta" opacity="0.6" />
+      </g>
+    ))
+  }
+
+  <!-- Mar -->
+  <rect x="0" y={orilla} width={e.ancho} height={e.alto - orilla} fill="url(#degradado-mar)"></rect>
+  {
+    olas.map((o) => (
+      <path
+        data-ola={o.longitud}
+        data-duracion={o.duracion}
+        d={ola(o.y, o.amplitud, o.longitud)}
+        fill="none"
+        stroke="white"
+        stroke-width="0.3"
+        stroke-linecap="round"
+        opacity={o.opacidad}
+      />
+    ))
+  }
+  <!-- Espuma de la orilla -->
+  <path
+    data-ola="8"
+    data-duracion="6"
+    d={ola(orilla + 0.9, 0.45, 8)}
+    fill="none"
+    stroke="white"
+    stroke-width="1.2"
+    stroke-linecap="round"
+    opacity="0.75"></path>
+
+  <!-- La orilla va resaltada porque ahí se escoge el punto -->
+  <line x1="0" y1={orilla} x2={e.ancho} y2={orilla} class="stroke-oro" stroke-width="0.8"></line>
+
+  {
+    !simple && (
+      <>
+        <line class="linea-guia stroke-tinta" x1="0" y1={orilla} x2={e.ancho} y2={orilla} stroke-width="0.8" />
+
+        {/* Regla en metros del lado de la arena */}
+        <g class="stroke-tinta" stroke-width="0.22" opacity="0.5">
+          {rayitas.map((x) => (
+            <line x1={x} y1={orilla - 0.8} x2={x} y2={orilla - (x % 10 === 0 ? 2.1 : 1.5)} />
+          ))}
+        </g>
+        <g font-size="1.9" text-anchor="middle" class="fill-tinta font-mono" opacity="0.65">
+          {numeros.map((x) => (
+            <text x={x} y={orilla - 2.9}>
+              {x}
+            </text>
+          ))}
+        </g>
+
+        {/* Nombres de las zonas con su velocidad */}
+        <text x="3" y="18.4" font-size="1.9" class="fill-tinta font-mono" opacity="0.7">
+          corriendo a <tspan data-vel-texto="0" font-weight="700">{e.velocidad1} m/s</tspan>
+        </text>
+        <text x="2.8" y="25.4" font-size="7.5" class="fill-tinta font-display font-black" opacity="0.16">
+          PLAYA
+        </text>
+        <text x="3" y="50.4" font-size="1.9" class="fill-white font-mono" opacity="0.85">
+          nadando a <tspan data-vel-texto="1" font-weight="700">{e.velocidad2} m/s</tspan>
+        </text>
+        <text x="2.8" y="57.6" font-size="7.5" class="fill-white font-display font-black" opacity="0.22">
+          MAR
+        </text>
+
+        <text x={e.inicio.x + 5.6} y={e.inicio.y + 0.4} font-size="2.6" class="fill-tinta font-display font-extrabold tracking-wide">
+          SALIDA
+        </text>
+        <text
+          x={e.meta.x}
+          y={e.meta.y - 4.4}
+          font-size="2.6"
+          text-anchor="middle"
+          class="fill-white stroke-tinta font-display font-extrabold tracking-wide"
+          stroke-width="0.6"
+          paint-order="stroke"
+          stroke-linejoin="round"
+        >
+          META
+        </text>
+      </>
+    )
+  }
+
+  <!-- Salida: la torre del salvavidas vista desde arriba -->
+  <g transform={`translate(${e.inicio.x} ${e.inicio.y})`}>
+    <rect x="-3.6" y="-3.6" width="7.2" height="7.2" rx="1" class="fill-tinta" opacity="0.15" transform="translate(0.5 0.6)"></rect>
+    <rect x="-3.6" y="-3.6" width="7.2" height="7.2" rx="1" fill="white" class="stroke-tinta" stroke-width="0.3"></rect>
+    <path d="M-3.6 -3.6 3.6 3.6M3.6 -3.6-3.6 3.6" fill="none" class="stroke-tinta" stroke-width="0.2" opacity="0.35"></path>
+  </g>
+
+  <!-- Meta: un salvavidas flotando en el mar, con un anillo que late -->
+  <circle data-pulso="7" cx={e.meta.x} cy={e.meta.y} r="2" fill="none" stroke="white" stroke-width="0.45"></circle>
+  <g transform={`translate(${e.meta.x} ${e.meta.y})`}>
+    <g data-flota>
+      <circle r="1.9" fill="none" stroke="white" stroke-width="1.4"></circle>
+      <circle r="1.9" fill="none" class="stroke-j1" stroke-width="1.4" stroke-dasharray="1.492 1.492"></circle>
+      <circle r="2.6" fill="none" class="stroke-tinta" stroke-width="0.25"></circle>
+      <circle r="1.2" fill="none" class="stroke-tinta" stroke-width="0.25"></circle>
+    </g>
+  </g>
+</g>

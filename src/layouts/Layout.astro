@@ -1,0 +1,93 @@
+---
+// Plantilla base: aquí va lo que se repite en todas las páginas
+// (el <head>, el menú de arriba y el pie de página).
+import '../styles/global.css';
+
+const { titulo, descripcion = 'Dos juegos para descubrir cuál es la ruta más rápida.' } = Astro.props;
+
+// Con esto sabemos en qué página estamos para marcarla en el menú.
+// Le quitamos la diagonal del final porque al compilar Astro la agrega.
+const rutaActual = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+const enlaces = [
+  { href: '/', texto: 'Inicio' },
+  { href: '/cancha', texto: 'Cancha' },
+  { href: '/playa', texto: 'Playa y mar' },
+];
+
+// Iconito de la pestaña hecho en SVG (una ruta con sus dos tramos)
+const icono =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2317140f'/%3E%3Cpath d='M6 7 16 25 26 13' fill='none' stroke='%23ffc533' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='6' cy='7' r='3' fill='%23ff4b33'/%3E%3C/svg%3E";
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={descripcion} />
+    <link rel="icon" href={icono} />
+    <title>{titulo} · La ruta más rápida</title>
+
+    <!-- Marcamos que sí hay JavaScript para poder esconder lo que se va a animar -->
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+  </head>
+
+  <body class="flex min-h-dvh flex-col font-sans text-tinta antialiased">
+    <header class="border-b-[3px] border-tinta bg-tinta text-papel">
+      <div class="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
+        <a href="/" class="group flex items-center gap-3 rounded-md focus-visible:outline-3 focus-visible:outline-oro">
+          <!-- Logo: la misma ruta de dos tramos del icono -->
+          <svg viewBox="0 0 32 32" class="size-8" aria-hidden="true">
+            <path
+              d="M5 6 15 26 27 12"
+              fill="none"
+              class="stroke-oro"
+              stroke-width="3.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+            <circle cx="5" cy="6" r="3.2" class="fill-j1"></circle>
+            <circle cx="27" cy="12" r="3.2" class="fill-papel"></circle>
+          </svg>
+          <span class="font-display text-2xl font-black uppercase leading-none tracking-wide">
+            La ruta más rápida
+          </span>
+        </a>
+
+        <nav aria-label="Principal">
+          <ul class="flex items-center gap-1 font-display text-lg font-extrabold uppercase tracking-wide">
+            {
+              enlaces.map((enlace) => (
+                <li>
+                  <a
+                    href={enlace.href}
+                    aria-current={rutaActual === enlace.href ? 'page' : undefined}
+                    class="block rounded-md px-3 py-1.5 leading-none transition-colors hover:bg-papel/15 focus-visible:outline-3 focus-visible:outline-oro aria-[current=page]:bg-oro aria-[current=page]:text-tinta"
+                  >
+                    {enlace.texto}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <footer class="border-t-2 border-tinta/15 px-4 py-4 text-center font-mono text-xs text-tinta/60 sm:px-6">
+      tiempo = distancia ÷ velocidad · Hecho con Astro, Tailwind y GSAP
+    </footer>
+  </body>
+</html>
+
+<script>
+  // Animación de entrada que comparten todas las páginas
+  import { animarEntrada } from '../scripts/entrada.js';
+  animarEntrada();
+</script>

@@ -1,0 +1,107 @@
+---
+// Dibujo de la cancha de fútbol vista desde arriba (va dentro de un <svg>).
+// Está hecha a escala con medidas oficiales: 1 unidad del SVG = 1 metro.
+// Con la propiedad "simple" se quitan la regla y los letreros (así la
+// reutilizamos como miniatura en la página de inicio).
+import { CANCHA as e } from '../scripts/escenarios.js';
+
+const { simple = false, margen = 7, margenAbajo = 11 } = Astro.props;
+
+// Franjas del pasto (como cuando lo podan en un estadio)
+const franjas = Array.from({ length: 10 }, (_, i) => i * 10.5);
+
+// Rayitas de la regla sobre la línea de fondo: una cada 5 m
+const rayitas = Array.from({ length: 22 }, (_, i) => i * 5);
+const numeros = [...rayitas.filter((x) => x % 10 === 0), 105];
+---
+
+<g>
+  <!-- Pasto de alrededor y franjas de la cancha -->
+  <rect
+    x={-margen}
+    y={-margen}
+    width={e.ancho + margen * 2}
+    height={e.alto + margen + margenAbajo}
+    class="fill-pasto-oscuro"></rect>
+  {franjas.map((x, i) => <rect x={x} y="0" width="10.5" height={e.alto} fill={i % 2 ? '#2f8f4e' : '#36994f'} />)}
+
+  <!-- Líneas blancas reglamentarias -->
+  <g fill="none" stroke="white" stroke-width="0.35" opacity="0.92">
+    <rect x="0" y="0" width="105" height="68"></rect>
+    <line x1="52.5" y1="0" x2="52.5" y2="68"></line>
+    <circle cx="52.5" cy="34" r="9.15"></circle>
+    <!-- áreas grandes y chicas -->
+    <rect x="0" y="13.84" width="16.5" height="40.32"></rect>
+    <rect x="88.5" y="13.84" width="16.5" height="40.32"></rect>
+    <rect x="0" y="24.84" width="5.5" height="18.32"></rect>
+    <rect x="99.5" y="24.84" width="5.5" height="18.32"></rect>
+    <!-- medias lunas -->
+    <path d="M16.5 26.69A9.15 9.15 0 0 1 16.5 41.31"></path>
+    <path d="M88.5 26.69A9.15 9.15 0 0 0 88.5 41.31"></path>
+    <!-- esquinas -->
+    <path d="M1 0A1 1 0 0 1 0 1M104 0A1 1 0 0 0 105 1M0 67A1 1 0 0 1 1 68M105 67A1 1 0 0 0 104 68"></path>
+    <!-- porterías -->
+    <rect x="-2" y="30.34" width="2" height="7.32"></rect>
+    <rect x="105" y="30.34" width="2" height="7.32"></rect>
+  </g>
+  <g fill="white" opacity="0.92">
+    <circle cx="11" cy="34" r="0.4"></circle>
+    <circle cx="94" cy="34" r="0.4"></circle>
+  </g>
+
+  <!-- La línea de fondo va resaltada porque ahí se escoge el punto -->
+  <line x1="0" y1="68" x2="105" y2="68" class="stroke-oro" stroke-width="0.9" stroke-linecap="round"></line>
+
+  {
+    !simple && (
+      <>
+        <line class="linea-guia stroke-tinta" x1="0" y1="68" x2="105" y2="68" stroke-width="0.9" />
+
+        {/* Regla en metros debajo de la línea */}
+        <g stroke="white" stroke-width="0.25" opacity="0.8">
+          {rayitas.map((x) => (
+            <line x1={x} y1="68.9" x2={x} y2={x % 10 === 0 ? 70.3 : 69.6} />
+          ))}
+        </g>
+        <g font-size="2" text-anchor="middle" class="fill-white font-mono" opacity="0.85">
+          {numeros.map((x) => (
+            <text x={x} y="72.6">
+              {x}
+            </text>
+          ))}
+        </g>
+
+        {/* Letreros */}
+        <text x="4.8" y="-2.5" font-size="2.6" class="fill-white font-display font-extrabold tracking-wide">
+          SALIDA
+        </text>
+        <text x="105" y="-2.7" font-size="1.9" text-anchor="end" class="fill-white font-mono" opacity="0.85">
+          velocidad constante: <tspan data-vel-texto="0" font-weight="700">{e.velocidad1} m/s</tspan>
+        </text>
+        <text
+          x="52.5"
+          y="29.6"
+          font-size="2.6"
+          text-anchor="middle"
+          class="fill-white stroke-pasto-oscuro font-display font-extrabold tracking-wide"
+          stroke-width="0.7"
+          paint-order="stroke"
+        >
+          META
+        </text>
+      </>
+    )
+  }
+
+  <!-- Meta: el balón en el centro, con un anillo que late -->
+  <circle data-pulso="7" cx="52.5" cy="34" r="1.9" fill="none" class="stroke-oro" stroke-width="0.5"></circle>
+  <g transform="translate(52.5 34)">
+    <circle r="1.9" fill="white" class="stroke-tinta" stroke-width="0.3"></circle>
+    <polygon points="0,-0.85 0.81,-0.26 0.5,0.69 -0.5,0.69 -0.81,-0.26" class="fill-tinta"></polygon>
+    <path
+      d="M0-.85V-1.9M.81-.26 1.8-.59M.5.69 1.12 1.54M-.5.69-1.12 1.54M-.81-.26-1.8-.59"
+      fill="none"
+      class="stroke-tinta"
+      stroke-width="0.25"></path>
+  </g>
+</g>

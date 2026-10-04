@@ -1,0 +1,41 @@
+---
+// JUEGO 1: la cancha de fútbol (velocidad constante).
+// Los dos jugadores salen de la esquina de arriba a la izquierda, escogen
+// un punto de la línea de fondo y de ahí se van al centro de la cancha.
+import Layout from '../layouts/Layout.astro';
+import MarcoJuego from '../components/MarcoJuego.astro';
+import EscenaCancha from '../components/EscenaCancha.astro';
+import { CANCHA } from '../scripts/escenarios.js';
+
+// Dejamos margen alrededor de la cancha (y más abajo, para la regla y la etiqueta)
+const margen = 7;
+const margenAbajo = 11;
+const caja = {
+  x: -margen,
+  y: -margen,
+  ancho: CANCHA.ancho + margen * 2,
+  alto: CANCHA.alto + margen + margenAbajo,
+};
+
+const pasos = [
+  'Jugador 1: arrastra sobre la línea amarilla (o usa el control) para escoger tu punto y confírmalo. Queda en secreto.',
+  'Jugador 2: escoge el tuyo. Al confirmar empieza la cuenta regresiva.',
+  'Los dos corren a la misma velocidad: esquina → punto → centro. Gana el que tarde menos.',
+];
+---
+
+<Layout titulo="La cancha" descripcion="Juego 1: dos jugadores, velocidad constante y una cancha de fútbol.">
+  <MarcoJuego
+    escenario={CANCHA}
+    numero="01"
+    etiqueta="Velocidad constante"
+    titulo="La cancha"
+    descripcion="Los dos salen de la esquina, tocan un punto de la línea de fondo y corren al centro. Como van igual de rápido, gana quien escoja el camino más corto."
+    caja={caja}
+    dyEtiqueta={7.3}
+    textoAlterno="Cancha de fútbol vista desde arriba. Los jugadores salen de la esquina superior izquierda, pasan por un punto de la línea de abajo y terminan en el centro."
+    pasos={pasos}
+  >
+    <EscenaCancha margen={margen} margenAbajo={margenAbajo} />
+  </MarcoJuego>
+</Layout>

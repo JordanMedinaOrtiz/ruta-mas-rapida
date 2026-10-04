@@ -1,0 +1,347 @@
+---
+// Panel lateral del juego: el turno, el botón de confirmar, los
+// cronómetros de cada jugador, el resultado y los ajustes de velocidad.
+// Es el mismo para los dos juegos, lo que cambia viene en "escenario".
+//
+// Igual que en el tablero, aquí solo va el HTML. Los textos y lo que
+// se muestra u oculta lo controla src/scripts/juego.js.
+const { escenario } = Astro.props;
+
+const jugadores = [1, 2];
+const mitad = (escenario.xMin + escenario.xMax) / 2;
+const color: Record<number, string> = {
+  1: "var(--color-j1)",
+  2: "var(--color-j2)",
+};
+---
+
+<aside class="flex flex-col gap-4 lg:row-span-2">
+  <!-- Tarjeta principal: cambia según la fase (elegir / carrera / resultado) -->
+  <div
+    data-escena
+    data-entrada
+    class="cartel overflow-hidden bg-tinta text-papel"
+    style="--acento: var(--color-j1)"
+  >
+    <!-- Franja de color del jugador en turno -->
+    <div class="h-2.5 bg-(--acento) transition-colors duration-300"></div>
+
+    <div class="p-5">
+      <!-- FASE 1: elegir el punto -->
+      <div data-seccion="elegir">
+        <p
+          class="font-mono text-[11px] uppercase tracking-[0.22em] text-papel/60"
+        >
+          Turno de
+        </p>
+        <h2
+          class="mt-1 flex items-center gap-3 font-display text-5xl font-black uppercase leading-none"
+        >
+          Jugador
+          <span
+            data-turno-numero
+            class="grid size-11 place-items-center rounded-full border-2 border-papel bg-(--acento) text-3xl text-white transition-colors duration-300"
+            >1</span
+          >
+        </h2>
+        <p class="mt-3 text-sm leading-snug text-papel/80">
+          Arrastra sobre {escenario.nombreLinea} para escoger por dónde vas a pasar.
+          <span data-aviso-secreto hidden
+            >El punto del Jugador 1 quedó guardado en secreto.</span
+          >
+        </p>
+
+        <div class="mt-4">
+          <div class="flex items-baseline justify-between">
+            <label
+              for="deslizador-punto"
+              class="font-mono text-[11px] uppercase tracking-[0.18em] text-papel/60"
+            >
+              Tu punto
+            </label>
+            <output
+              data-lectura-x
+              for="deslizador-punto"
+              class="font-mono text-lg font-bold tabular-nums"
+            >
+              {mitad.toFixed(1)} m
+            </output>
+          </div>
+          <input
+            id="deslizador-punto"
+            data-deslizador
+            type="range"
+            min={escenario.xMin}
+            max={escenario.xMax}
+            step="0.1"
+            value={mitad}
+            class="mt-1"
+          />
+          <div class="flex justify-between font-mono text-[10px] text-papel/50">
+            <span>{escenario.xMin} m</span>
+            <span>{escenario.xMax} m</span>
+          </div>
+        </div>
+
+        <button
+          data-confirmar
+          type="button"
+          class="boton mt-4 w-full bg-papel text-tinta shadow-[4px_4px_0_var(--acento)]"
+        >
+          Confirmar punto
+        </button>
+      </div>
+
+      <!-- FASE 2: la carrera -->
+      <div data-seccion="carrera" hidden>
+        <p
+          class="font-mono text-[11px] uppercase tracking-[0.22em] text-papel/60"
+        >
+          En carrera
+        </p>
+        <h2
+          data-titulo-carrera
+          class="mt-1 font-display text-5xl font-black uppercase leading-none"
+        >
+          ¡Preparados!
+        </h2>
+        <p class="mt-3 text-sm leading-snug text-papel/80">
+          Los dos salen al mismo tiempo. Gana quien llegue primero a la meta.
+        </p>
+        <p
+          class="mt-3 inline-block rounded-full border border-papel/30 px-3 py-1 font-mono text-[11px] text-papel/70"
+        >
+          Animación a ×{escenario.aceleracion} · el cronómetro marca el tiempo real
+        </p>
+      </div>
+
+      <!-- FASE 3: el resultado -->
+      <div data-seccion="resultado" hidden>
+        <p
+          data-resultado-item
+          class="font-mono text-[11px] uppercase tracking-[0.22em] text-papel/60"
+        >
+          Resultado
+        </p>
+        <h2
+          data-ganador
+          data-resultado-item
+          aria-live="polite"
+          class="mt-1 font-display text-5xl font-black uppercase leading-none"
+        >
+          Gana Jugador 1
+        </h2>
+        <p
+          data-diferencia
+          data-resultado-item
+          class="mt-3 text-sm leading-snug text-papel/80"
+        >
+        </p>
+
+        <!-- Datos de la ruta óptima (aparecen al revelarla) -->
+        <dl
+          data-optimo-info
+          hidden
+          class="mt-4 rounded-lg border-2 border-oro/70 p-3 font-mono text-xs leading-relaxed"
+        >
+          <div class="flex justify-between gap-2">
+            <dt class="text-oro">Punto óptimo</dt>
+            <dd data-optimo-x class="font-bold tabular-nums"></dd>
+          </div>
+          <div class="flex justify-between gap-2">
+            <dt class="text-oro">Tiempo mínimo</dt>
+            <dd data-optimo-tiempo class="font-bold tabular-nums"></dd>
+          </div>
+          {
+            jugadores.map((j) => (
+              <div class="flex justify-between gap-2">
+                <dt class="text-papel/70">Jugador {j}</dt>
+                <dd data-optimo-extra={j} class="tabular-nums" />
+              </div>
+            ))
+          }
+        </dl>
+
+        <div data-resultado-item class="mt-4 grid grid-cols-2 gap-3">
+          <button
+            data-revelar
+            type="button"
+            class="boton bg-oro text-tinta shadow-[4px_4px_0_var(--color-papel)]"
+          >
+            Ver óptima
+          </button>
+          <button
+            data-nueva
+            type="button"
+            class="boton bg-papel text-tinta shadow-[4px_4px_0_var(--acento)]"
+          >
+            Otra ronda
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarjetas de los jugadores con su cronómetro -->
+  <div data-entrada class="grid grid-cols-2 gap-3">
+    {
+      jugadores.map((j) => (
+        <article
+          data-tarjeta={j}
+          class="cartel-chico bg-hoja p-3"
+          style={`--color-jugador: ${color[j]}`}
+        >
+          <header class="flex items-center justify-between gap-2">
+            <h3 class="flex items-center gap-2 font-display text-xl font-black uppercase leading-none">
+              <span class="grid size-7 place-items-center rounded-full bg-(--color-jugador) text-base text-white">
+                {j}
+              </span>
+              Jugador
+            </h3>
+            <p
+              class="whitespace-nowrap font-mono text-[11px] text-tinta/70"
+              title="Rondas ganadas"
+            >
+              <span
+                data-victorias={j}
+                class="inline-block text-base font-bold text-tinta"
+              >
+                0
+              </span>{" "}
+              pts
+            </p>
+          </header>
+
+          <p
+            data-tiempo={j}
+            class="mt-3 font-mono text-3xl font-bold leading-none tabular-nums"
+          >
+            0.00 s
+          </p>
+
+          <p
+            data-estado={j}
+            class="mt-2 inline-block rounded-full bg-tinta/8 px-2 py-0.5 font-mono text-[11px] font-medium"
+          >
+            En espera
+          </p>
+
+          {/* Tablita con la distancia (m) y el tiempo (s) de cada tramo se llena al terminar */}
+          <div class="mt-3 border-t-2 border-dashed border-tinta/20 pt-2 font-mono text-[11px] leading-snug tabular-nums">
+            <p class="flex justify-between gap-1">
+              <span class="text-tinta/60">Punto</span>
+              <span data-punto={j} class="font-bold">
+                —
+              </span>
+            </p>
+            <table class="mt-1 w-full">
+              <thead>
+                <tr class="text-tinta/60">
+                  <th scope="col" class="text-left font-normal">
+                    Tramo
+                  </th>
+                  <th scope="col" class="text-right font-normal">
+                    m
+                  </th>
+                  <th scope="col" class="text-right font-normal">
+                    s
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row" class="text-left font-normal text-tinta/60">
+                    {escenario.tramos[0]}
+                  </th>
+                  <td data-d1={j} class="text-right">
+                    —
+                  </td>
+                  <td data-t1={j} class="text-right">
+                    —
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row" class="text-left font-normal text-tinta/60">
+                    {escenario.tramos[1]}
+                  </th>
+                  <td data-d2={j} class="text-right">
+                    —
+                  </td>
+                  <td data-t2={j} class="text-right">
+                    —
+                  </td>
+                </tr>
+                <tr class="font-bold">
+                  <th scope="row" class="text-left">
+                    Total
+                  </th>
+                  <td data-d-total={j} class="text-right">
+                    —
+                  </td>
+                  <td data-t-total={j} class="text-right">
+                    —
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+
+  <!-- Ajustes de velocidad -->
+  <div data-entrada class="cartel-chico bg-hoja p-4">
+    <div class="flex items-center justify-between gap-2">
+      <h3 class="font-display text-xl font-black uppercase leading-none">
+        Velocidades
+      </h3>
+      <button
+        data-reiniciar-marcador
+        type="button"
+        class="rounded-md px-1.5 py-1 font-mono text-[11px] text-tinta/60 underline underline-offset-2 hover:text-tinta focus-visible:outline-3 focus-visible:outline-oro"
+      >
+        Reiniciar marcador
+      </button>
+    </div>
+
+    <div class="mt-3 space-y-3">
+      {
+        escenario.controles.map((control: {
+          etiqueta: string;
+          claves: string[];
+          min: number;
+          max: number;
+          paso: number;
+        }, i: number) => (
+          <div>
+            <div class="flex items-baseline justify-between">
+              <label for={`velocidad-${i}`} class="text-sm">
+                {control.etiqueta}
+              </label>
+              <output
+                data-velocidad-valor={i}
+                for={`velocidad-${i}`}
+                class="font-mono text-sm font-bold tabular-nums"
+              >
+                {escenario[control.claves[0]]} m/s
+              </output>
+            </div>
+            <input
+              id={`velocidad-${i}`}
+              data-velocidad={i}
+              type="range"
+              min={control.min}
+              max={control.max}
+              step={control.paso}
+              value={escenario[control.claves[0]]}
+            />
+          </div>
+        ))
+      }
+    </div>
+    <p class="mt-2 text-xs leading-snug text-tinta/60">
+      Se pueden cambiar antes de que arranque la carrera.
+    </p>
+  </div>
+</aside>

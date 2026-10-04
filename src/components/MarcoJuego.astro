@@ -1,0 +1,80 @@
+---
+// Estructura de la página de un juego: título, tablero (SVG), panel y
+// las instrucciones. Los dos juegos la usan, cada uno solo manda su
+// escenario y su dibujo de fondo (que entra por el <slot />).
+import CapaJugadores from './CapaJugadores.astro';
+import PanelJuego from './PanelJuego.astro';
+
+const {
+  escenario,
+  numero,
+  etiqueta,
+  titulo,
+  descripcion,
+  caja,
+  dyEtiqueta,
+  ladoEtiqueta = false,
+  textoAlterno,
+  pasos,
+} = Astro.props;
+
+// Proporción del tablero (ancho / alto). La usamos para limitar su tamaño
+// según el alto de la ventana y que el juego quepa sin tener que hacer scroll.
+const proporcion = caja.ancho / caja.alto;
+---
+
+<section
+  class="mx-auto w-full max-w-[calc(var(--tablero-max)_+_27.5rem)] px-4 py-6 sm:px-6"
+  style={`--tablero-max: max(36rem, calc((100dvh - 15rem) * ${proporcion.toFixed(4)}))`}
+>
+  <header data-entrada class="mb-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
+    <div>
+      <p class="font-mono text-xs uppercase tracking-[0.22em] text-tinta/70">Juego {numero} · {etiqueta}</p>
+      <h1 class="font-display text-6xl font-black uppercase leading-[0.85] sm:text-7xl">{titulo}</h1>
+    </div>
+    <p class="max-w-md text-pretty text-[15px] leading-snug text-tinta/80">{descripcion}</p>
+  </header>
+
+  <!-- data-juego le dice al script qué escenario cargar -->
+  <!-- En pantallas grandes: tablero a la izquierda y panel a la derecha, con las
+       instrucciones debajo del tablero. En el celular todo va en una columna
+       (tablero, panel y al final las instrucciones). -->
+  <div
+    data-juego={escenario.id}
+    data-fase="elige1"
+    class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_23rem] lg:grid-rows-[auto_1fr]"
+  >
+    <div data-entrada class="cartel min-w-0 overflow-hidden bg-tinta">
+      <svg data-tablero viewBox={`${caja.x} ${caja.y} ${caja.ancho} ${caja.alto}`} role="img" aria-label={textoAlterno}>
+        <slot />
+        <CapaJugadores escenario={escenario} dyEtiqueta={dyEtiqueta} ladoEtiqueta={ladoEtiqueta} />
+      </svg>
+    </div>
+
+    <PanelJuego escenario={escenario} />
+
+    <!-- Instrucciones -->
+    <ol data-entrada class="grid gap-x-6 gap-y-3 sm:grid-cols-3">
+      {
+        pasos.map((paso: string, i: number) => (
+          <li class="flex gap-3">
+            <span class="font-display text-4xl font-black leading-none text-tinta/25">{i + 1}</span>
+            <p class="text-pretty text-sm leading-snug text-tinta/80">{paso}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<script>
+  // Aquí se arranca el juego: buscamos el contenedor, vemos qué escenario
+  // pide (cancha o playa) y se lo pasamos al motor.
+  import { iniciarJuego } from '../scripts/juego.js';
+  import { CANCHA, PLAYA } from '../scripts/escenarios.js';
+
+  const escenarios: Record<string, typeof CANCHA | typeof PLAYA> = { cancha: CANCHA, playa: PLAYA };
+  const raiz = document.querySelector<HTMLElement>('[data-juego]');
+
+  if (raiz && raiz.dataset.juego) iniciarJuego(raiz, escenarios[raiz.dataset.juego]);
+</script>

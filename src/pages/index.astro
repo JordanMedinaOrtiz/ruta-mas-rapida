@@ -1,0 +1,274 @@
+---
+// PÁGINA DE INICIO
+// Presenta los dos juegos con una miniatura animada de cada uno.
+import Layout from "../layouts/Layout.astro";
+import EscenaCancha from "../components/EscenaCancha.astro";
+import EscenaPlaya from "../components/EscenaPlaya.astro";
+import { CANCHA, PLAYA } from "../scripts/escenarios.js";
+
+// Datos de las dos tarjetas. "demo" son los puntos que escogen los dos
+// jugadores de mentiritas que corren en la miniatura (uno malo y uno bueno).
+const juegos = [
+  {
+    href: "/cancha",
+    numero: "01",
+    etiqueta: "Velocidad constante",
+    titulo: "La cancha",
+    texto:
+      "De la esquina a la línea de fondo y de ahí al centro. Los dos corren igual de rápido: ¿quién encuentra el camino más corto?",
+    escenario: CANCHA,
+    caja: "-11.5 -4 128 77", // con margen a los lados para que mida lo mismo que la de la playa
+    demo: [78, 35],
+  },
+  {
+    href: "/playa",
+    numero: "02",
+    etiqueta: "Dos velocidades",
+    titulo: "Playa y mar",
+    texto:
+      "En la arena se corre rápido y en el mar se nada lento. Aquí la línea recta pierde: ¿por dónde conviene entrar al agua?",
+    escenario: PLAYA,
+    caja: "0 0 100 60",
+    demo: [46, 78],
+  },
+];
+
+const colorTrazo = ["stroke-j1", "stroke-j2"];
+const colorRelleno = ["fill-j1", "fill-j2"];
+
+// Para dibujar la ruta de cada jugador de la miniatura
+const ruta = (e: typeof CANCHA | typeof PLAYA, x: number) =>
+  `${e.inicio.x},${e.inicio.y} ${x},${e.lineaY} ${e.meta.x},${e.meta.y}`;
+
+const pasos = [
+  {
+    titulo: "Escojan",
+    texto:
+      "Cada jugador elige en secreto un punto de la línea por donde va a pasar.",
+  },
+  {
+    titulo: "Corran",
+    texto:
+      "Los dos salen al mismo tiempo desde la misma esquina, sin acelerar ni frenar.",
+  },
+  {
+    titulo: "Comparen",
+    texto:
+      "El cronómetro dice quién tardó menos. Al final pueden ver cuál era la ruta perfecta.",
+  },
+];
+---
+
+<Layout titulo="Inicio">
+  <div class="mx-auto max-w-[1200px] px-4 py-10 sm:px-6 sm:py-14">
+    <!-- Encabezado principal -->
+    <section class="relative">
+      <p
+        data-entrada
+        class="font-mono text-xs uppercase tracking-[0.25em] text-tinta/70"
+      >
+        2 juegos · 2 jugadores · 1 pregunta
+      </p>
+      <h1
+        data-entrada
+        class="mt-3 max-w-[11ch] font-display text-[clamp(3.75rem,12vw,9.5rem)] font-black uppercase leading-[1.02]"
+      >
+        ¿Cuál es la ruta más <span class="text-j1">rápida</span>?
+      </h1>
+
+      <div
+        data-entrada
+        class="mt-8 flex flex-wrap items-center gap-x-8 gap-y-5"
+      >
+        <p class="max-w-xl text-pretty text-lg leading-snug text-tinta/80">
+          Dos jugadores salen del mismo lugar y tienen que llegar a la misma
+          meta, pero antes deben pasar por un punto de la línea que cada quien
+          escoge. Gana el que tarde menos.
+        </p>
+        <!-- La fórmula, como si fuera una calcomanía pegada chueca -->
+        <p
+          class="cartel-chico -rotate-3 bg-oro px-4 py-2 font-mono text-sm font-bold sm:text-base"
+          aria-label="tiempo igual a distancia entre velocidad"
+        >
+          tiempo = distancia ÷ velocidad
+        </p>
+      </div>
+    </section>
+
+    <!-- Tarjetas de los juegos -->
+    <section class="mt-12 grid gap-8 md:grid-cols-2" aria-label="Juegos">
+      {
+        juegos.map((juego) => (
+          <a
+            data-entrada
+            href={juego.href}
+            class="cartel group flex flex-col overflow-hidden bg-hoja transition-[translate,box-shadow] duration-200 ease-out hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[11px_11px_0_var(--color-tinta)] focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-j2"
+          >
+            {/* Miniatura: mismo dibujo del juego, con dos puntos corriendo en bucle */}
+            <svg
+              data-demo={juego.escenario.id}
+              data-demo-x={juego.demo.join(",")}
+              viewBox={juego.caja}
+              class="block w-full border-b-[3px] border-tinta"
+              aria-hidden="true"
+            >
+              {juego.escenario.id === "cancha" ? (
+                <EscenaCancha simple margen={11.5} margenAbajo={5} />
+              ) : (
+                <EscenaPlaya simple />
+              )}
+              {juego.demo.map((x, i) => (
+                <>
+                  <polyline
+                    points={ruta(juego.escenario, x)}
+                    fill="none"
+                    stroke="white"
+                    stroke-width="1.6"
+                    stroke-linejoin="round"
+                    opacity="0.85"
+                  />
+                  <polyline
+                    points={ruta(juego.escenario, x)}
+                    fill="none"
+                    class={colorTrazo[i]}
+                    stroke-width="0.8"
+                    stroke-linejoin="round"
+                    stroke-dasharray="2 1.4"
+                  />
+                </>
+              ))}
+              {juego.demo.map((_, i) => (
+                <circle
+                  data-demo-punto
+                  cx={juego.escenario.inicio.x}
+                  cy={juego.escenario.inicio.y}
+                  r="2.4"
+                  class={colorRelleno[i]}
+                  stroke="white"
+                  stroke-width="0.6"
+                />
+              ))}
+            </svg>
+
+            <div class="flex flex-1 flex-col p-5 sm:p-6">
+              <p class="font-mono text-xs uppercase tracking-[0.22em] text-tinta/70">
+                Juego {juego.numero} · {juego.etiqueta}
+              </p>
+              <h2 class="mt-1 font-display text-6xl font-black uppercase leading-[0.85]">
+                {juego.titulo}
+              </h2>
+              <p class="mt-3 flex-1 text-pretty leading-snug text-tinta/80">
+                {juego.texto}
+              </p>
+              <p class="boton mt-5 self-start bg-tinta text-papel">
+                Jugar
+                <span
+                  aria-hidden="true"
+                  class="transition-transform duration-200 group-hover:translate-x-1.5"
+                >
+                  →
+                </span>
+              </p>
+            </div>
+          </a>
+        ))
+      }
+    </section>
+
+    <!-- Cómo se juega -->
+    <section class="mt-14" aria-labelledby="como-se-juega">
+      <h2
+        id="como-se-juega"
+        data-entrada
+        class="font-display text-4xl font-black uppercase leading-none"
+      >
+        Cómo se juega
+      </h2>
+      <ol class="mt-5 grid gap-6 sm:grid-cols-3">
+        {
+          pasos.map((paso, i) => (
+            <li data-entrada class="border-t-[3px] border-tinta pt-3">
+              <p class="font-display text-6xl font-black leading-none text-tinta/20">
+                {i + 1}
+              </p>
+              <h3 class="mt-1 font-display text-2xl font-extrabold uppercase leading-none">
+                {paso.titulo}
+              </h3>
+              <p class="mt-2 text-pretty text-sm leading-snug text-tinta/80">
+                {paso.texto}
+              </p>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  // Miniaturas animadas: en cada tarjeta corren dos puntitos usando la
+  // MISMA física del juego de verdad, por eso en la playa se ve cómo
+  // se frenan al entrar al mar.
+  import gsap from "gsap";
+  import { CANCHA, PLAYA } from "../scripts/escenarios.js";
+  import { calcularRuta, posicionEnTiempo } from "../scripts/fisica.js";
+
+  const escenarios = { cancha: CANCHA, playa: PLAYA };
+  const sinMovimiento = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+
+  document.querySelectorAll<SVGSVGElement>("[data-demo]").forEach((svg) => {
+    const escenario = escenarios[svg.dataset.demo as keyof typeof escenarios];
+    const demoX = svg.dataset.demoX;
+
+    if (!demoX) return;
+
+    const rutas = demoX
+      .split(",")
+      .map((x) => calcularRuta(escenario, Number(x)));
+    const puntos = svg.querySelectorAll("[data-demo-punto]");
+    const tiempoMaximo = Math.max(...rutas.map((ruta) => ruta.tiempoTotal), 0);
+
+    // Coloca cada puntito donde le toca en el segundo "t"
+    const colocar = (t: number) => {
+      rutas.forEach((ruta, i) => {
+        const posicion = posicionEnTiempo(escenario, ruta, t);
+        puntos[i].setAttribute("cx", posicion.x);
+        puntos[i].setAttribute("cy", posicion.y);
+      });
+    };
+
+    if (sinMovimiento) {
+      colocar(tiempoMaximo * 0.45); // sin animación los dejamos a medio camino
+      return;
+    }
+
+    // Igual que en el juego: ease 'none' para que la velocidad sea constante
+    const reloj = { t: 0 };
+    gsap.to(reloj, {
+      t: tiempoMaximo,
+      duration: tiempoMaximo / escenario.aceleracion,
+      ease: "none",
+      repeat: -1,
+      repeatDelay: 1.2,
+      delay: 1,
+      onUpdate: () => colocar(reloj.t),
+    });
+
+    // Los anillos de la meta también laten en la miniatura
+    svg.querySelectorAll<SVGElement>("[data-pulso]").forEach((anillo) => {
+      gsap.fromTo(
+        anillo,
+        { opacity: 0.9 },
+        {
+          attr: { r: Number(anillo.dataset.pulso) },
+          opacity: 0,
+          duration: 1.6,
+          repeat: -1,
+          ease: "power1.out",
+        },
+      );
+    });
+  });
+</script>
